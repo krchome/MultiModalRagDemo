@@ -59,6 +59,18 @@
             </p>
         </div>
     }
+    @if (!string.IsNullOrWhiteSpace(ViewBag.ExtractedText as string))
+    {
+        <div class="card mt-4">
+            <div class="card-header">
+                <strong>Extracted Document Text</strong>
+            </div>
+
+            <div class="card-body">
+                <pre style="white-space: pre-wrap; max-height: 400px; overflow-y: auto;">@ViewBag.ExtractedText</pre>
+            </div>
+        </div>
+    }
 </div>
 
 @section Scripts {

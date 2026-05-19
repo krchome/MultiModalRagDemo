@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using MultiModalRagDemo.Services;
 using MultiModalRagDemo.ViewModels;
 
 namespace MultiModalRagDemo.Controllers;
@@ -6,10 +7,14 @@ namespace MultiModalRagDemo.Controllers;
 public class RagController : Controller
 {
     private readonly IWebHostEnvironment _environment;
+    private readonly IDocumentTextExtractor _documentTextExtractor;
 
-    public RagController(IWebHostEnvironment environment)
+    public RagController(
+        IWebHostEnvironment environment,
+        IDocumentTextExtractor documentTextExtractor)
     {
         _environment = environment;
+        _documentTextExtractor = documentTextExtractor;
     }
 
     [HttpGet]
@@ -36,10 +41,15 @@ public class RagController : Controller
 
         string? documentFileName = null;
         string? imageFileName = null;
+        string extractedText = string.Empty;
 
         if (model.DocumentFile is not null && model.DocumentFile.Length > 0)
         {
             documentFileName = await SaveFileAsync(model.DocumentFile, uploadPath);
+
+            var documentFilePath = Path.Combine(uploadPath, documentFileName);
+
+            extractedText = await _documentTextExtractor.ExtractTextAsync(documentFilePath);
         }
 
         if (model.ImageFile is not null && model.ImageFile.Length > 0)
@@ -51,6 +61,7 @@ public class RagController : Controller
         ViewBag.DocumentFile = documentFileName;
         ViewBag.ImageFile = imageFileName;
         ViewBag.Question = model.Question;
+        ViewBag.ExtractedText = extractedText;
 
         return View(model);
     }
