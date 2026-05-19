@@ -1,0 +1,66 @@
+﻿@model MultiModalRagDemo.ViewModels.RagUploadViewModel
+
+@{
+    ViewData["Title"] = "Multimodal RAG Demo";
+}
+
+<div class="container mt-5">
+    <h1 class="mb-3">Multimodal RAG Demo</h1>
+
+    <p class="text-muted">
+        Upload a document and an image, then ask a question.
+        In later videos, we will extract text, analyze images,
+        create embeddings, store vectors, and generate RAG-based answers.
+    </p>
+
+    <form asp-action="Index"
+          asp-controller="Rag"
+          method="post"
+          enctype="multipart/form-data"
+          class="mt-4">
+
+        <div class="mb-3">
+            <label asp-for="DocumentFile" class="form-label"></label>
+            <input asp-for="DocumentFile" class="form-control" type="file" />
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="ImageFile" class="form-label"></label>
+            <input asp-for="ImageFile" class="form-control" type="file" accept="image/*" />
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Question" class="form-label"></label>
+            <textarea asp-for="Question" class="form-control" rows="4"
+                      placeholder="Example: What does the document say and what is shown in the image?"></textarea>
+            <span asp-validation-for="Question" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            Submit
+        </button>
+    </form>
+
+    @if (ViewBag.Message is not null)
+    {
+        <div class="alert alert-success mt-4">
+            <strong>@ViewBag.Message</strong>
+
+            <p class="mt-2 mb-1">
+                <strong>Document:</strong> @ViewBag.DocumentFile
+            </p>
+
+            <p class="mb-1">
+                <strong>Image:</strong> @ViewBag.ImageFile
+            </p>
+
+            <p class="mb-0">
+                <strong>Question:</strong> @ViewBag.Question
+            </p>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
