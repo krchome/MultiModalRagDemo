@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using MultimodalRagDemo.Services.Interfaces;
 using MultiModalRagDemo.Services;
 using MultiModalRagDemo.ViewModels;
 
@@ -6,15 +7,15 @@ namespace MultiModalRagDemo.Controllers;
 
 public class RagController : Controller
 {
-    private readonly IWebHostEnvironment _environment;
     private readonly IDocumentTextExtractor _documentTextExtractor;
+    private readonly ITextChunkingService _textChunkingService;
 
     public RagController(
-        IWebHostEnvironment environment,
-        IDocumentTextExtractor documentTextExtractor)
+        IDocumentTextExtractor documentTextExtractor,
+        ITextChunkingService textChunkingService)
     {
-        _environment = environment;
         _documentTextExtractor = documentTextExtractor;
+        _textChunkingService = textChunkingService;
     }
 
     [HttpGet]
@@ -24,56 +25,50 @@ public class RagController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Index(RagUploadViewModel model)
     {
-        if (!ModelState.IsValid)
+        if (model.DocumentFile == null || model.DocumentFile.Length == 0)
         {
+            ModelState.AddModelError(
+                nameof(model.DocumentFile),
+                "Please upload a PDF or TXT document.");
+
             return View(model);
         }
 
-        var uploadPath = Path.Combine(_environment.WebRootPath, "uploads");
+        string uploadsFolder = Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "wwwroot",
+            "uploads");
 
-        if (!Directory.Exists(uploadPath))
+        Directory.CreateDirectory(uploadsFolder);
+
+        string documentFilePath = Path.Combine(
+            uploadsFolder,
+            model.DocumentFile.FileName);
+
+        using (var stream = new FileStream(documentFilePath, FileMode.Create))
         {
-            Directory.CreateDirectory(uploadPath);
+            await model.DocumentFile.CopyToAsync(stream);
         }
 
-        string? documentFileName = null;
-        string? imageFileName = null;
-        string extractedText = string.Empty;
+        string extractedText =
+            await _documentTextExtractor.ExtractTextAsync(documentFilePath);
 
-        if (model.DocumentFile is not null && model.DocumentFile.Length > 0)
-        {
-            documentFileName = await SaveFileAsync(model.DocumentFile, uploadPath);
+        model.ExtractedText = extractedText;
 
-            var documentFilePath = Path.Combine(uploadPath, documentFileName);
+        model.Chunks = _textChunkingService.ChunkText(
+            extractedText,
+            chunkSize: 800,
+            overlapSize: 100);
+        model.UploadedDocumentName = model.DocumentFile.FileName;
 
-            extractedText = await _documentTextExtractor.ExtractTextAsync(documentFilePath);
-        }
-
-        if (model.ImageFile is not null && model.ImageFile.Length > 0)
-        {
-            imageFileName = await SaveFileAsync(model.ImageFile, uploadPath);
-        }
-
-        ViewBag.Message = "Files uploaded successfully.";
-        ViewBag.DocumentFile = documentFileName;
-        ViewBag.ImageFile = imageFileName;
-        ViewBag.Question = model.Question;
-        ViewBag.ExtractedText = extractedText;
 
         return View(model);
     }
-
-    private static async Task<string> SaveFileAsync(IFormFile file, string uploadPath)
-    {
-        var safeFileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
-        var filePath = Path.Combine(uploadPath, safeFileName);
-
-        await using var stream = new FileStream(filePath, FileMode.Create);
-        await file.CopyToAsync(stream);
-
-        return safeFileName;
-    }
 }
+
+    
+
+   
+

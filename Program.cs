@@ -1,3 +1,5 @@
+using MultimodalRagDemo.Services;
+using MultimodalRagDemo.Services.Interfaces;
 using MultiModalRagDemo.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -5,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddScoped<IDocumentTextExtractor, DocumentTextExtractor>();
+builder.Services.AddScoped<ITextChunkingService, TextChunkingService>();
 
 var app = builder.Build();
 
@@ -19,6 +22,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+
 
 app.UseAuthorization();
 
