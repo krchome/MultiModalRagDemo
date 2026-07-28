@@ -1,7 +1,7 @@
 ﻿fastapi
 uvicorn[standard]
 sentence-transformers
-requests
+ 
 # Test dependencies
 pytest>=7.0
 httpx>=0.24.0

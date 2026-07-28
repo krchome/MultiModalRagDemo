@@ -1,7 +1,7 @@
 ﻿@model MultiModalRagDemo.ViewModels.RagUploadViewModel
 
 @{
-    ViewData["Title"] = "Multimodal RAG Demo";
+    ViewData["Title"] = "Multimodal RAG Upload";
 }
 
 <div class="container mt-4">
@@ -42,16 +42,6 @@
                    accept="image/*" />
         </div>
 
-        <div class="mb-3">
-            <label asp-for="Question" class="form-label">
-                Ask a Question Optional
-            </label>
-
-            <input asp-for="Question"
-                   class="form-control"
-                   placeholder="Example: What is this document about?" />
-        </div>
-
         <button type="submit" class="btn btn-primary">
             Process Document
         </button>
@@ -63,7 +53,6 @@
             Processed file: @Model.UploadedDocumentName
         </div>
     }
-
 
     @if (!string.IsNullOrWhiteSpace(Model.ExtractedText))
     {
@@ -96,7 +85,7 @@
         {
             <div class="card mb-3">
                 <div class="card-header">
-                    <strong>Chunk @chunk.Index</strong>
+                    <strong>Chunk @chunk.ChunkIndex</strong>
                     <span class="text-muted">
                         — @chunk.Content.Length characters
                     </span>
@@ -108,8 +97,132 @@
             </div>
         }
     }
-</div>
 
+    @if (!string.IsNullOrWhiteSpace(Model.EmbeddingStatusMessage))
+    {
+        <hr />
+
+        <h3>Embedding Result</h3>
+
+        <div class="alert @(Model.EmbeddingSucceeded ? "alert-success" : "alert-warning")">
+            <strong>Status:</strong> @Model.EmbeddingStatusMessage
+        </div>
+
+        @if (Model.EmbeddingSucceeded)
+        {
+            <p>
+                <strong>Total Embeddings:</strong> @Model.EmbeddingCount
+            </p>
+
+            <p>
+                <strong>Vector Dimension:</strong> @Model.VectorDimension
+            </p>
+
+            <p>
+                The generated embeddings are now ready for the next step:
+                storing them in a vector database or Azure AI Search.
+            </p>
+        }
+    }
+
+    @if (Model.VectorsStored)
+    {
+        <div class="alert alert-success">
+            <h4>Vector Storage Complete</h4>
+            <p>@Model.VectorStoreMessage</p>
+            <p><strong>Stored Vector Count:</strong> @Model.StoredVectorCount</p>
+            <p><strong>Vector Store:</strong> Qdrant</p>
+            <p><strong>Collection:</strong> rag_chunks</p>
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(Model.VectorStoreMessage))
+    {
+        <div class="alert alert-warning">
+            <h4>Vector Storage Status</h4>
+            <p>@Model.VectorStoreMessage</p>
+        </div>
+    }
+
+    <hr />
+
+    <h3>Ask a Question</h3>
+
+    <p class="text-muted">
+        The document chunks are already stored in Qdrant.
+        Enter a question to retrieve the most relevant chunks using semantic search.
+    </p>
+
+    <form asp-action="Ask"
+          asp-controller="Rag"
+          method="post"
+          class="mb-4">
+
+        <div asp-validation-summary="All" class="text-danger"></div>
+
+        <div class="mb-3">
+            <label asp-for="Question" class="form-label"></label>
+
+            <textarea asp-for="Question"
+                      class="form-control"
+                      rows="3"
+                      placeholder="Example: What does this document say about embeddings?"></textarea>
+
+            <span asp-validation-for="Question"
+                  class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="TopK" class="form-label"></label>
+
+            <input asp-for="TopK"
+                   class="form-control"
+                   type="number"
+                   min="1"
+                   max="10" />
+
+            <span asp-validation-for="TopK"
+                  class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-success">
+            Search Relevant Chunks
+        </button>
+    </form>
+
+    @if (!string.IsNullOrWhiteSpace(Model.SearchMessage))
+    {
+        <div class="alert alert-warning">
+            @Model.SearchMessage
+        </div>
+    }
+
+    @if (Model.RetrievedChunks.Any())
+    {
+        <h3>Top-K Retrieved Chunks</h3>
+
+        <p class="text-muted">
+            These chunks were retrieved from Qdrant based on semantic similarity.
+            In Part 8, we will send these chunks to an LLM as context.
+        </p>
+
+        @foreach (var chunk in Model.RetrievedChunks)
+        {
+            <div class="card mb-3">
+                <div class="card-header">
+                    <strong>Score:</strong> @chunk.Score.ToString("0.0000")
+                    |
+                    <strong>Chunk Index:</strong> @chunk.ChunkIndex
+                    |
+                    <strong>Characters:</strong> @chunk.CharacterCount
+                </div>
+
+                <div class="card-body">
+                    <pre style="white-space: pre-wrap;">@chunk.ChunkText</pre>
+                </div>
+            </div>
+        }
+    }
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

@@ -1,6 +1,5 @@
-﻿using MultiModalRagDemo.Models;
-
-namespace MultimodalRagDemo.Services.Interfaces
+﻿using MultiModalRagDemo.Models; 
+namespace MultiModalRagDemo.Services
 {
     public interface ITextChunkingService
     {

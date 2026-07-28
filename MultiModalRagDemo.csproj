@@ -4,7 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>078c5b6e-727c-4d11-904f-4bf86f987d7a</UserSecretsId>
+    <UserSecretsId>ebc54cf1-1a5e-49a1-9e38-625f2fc4e4ee</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
   </PropertyGroup>
@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="embedding_service\test_chunks\with_embeddings\" />
     <Folder Include="wwwroot\uploads\" />
   </ItemGroup>
 

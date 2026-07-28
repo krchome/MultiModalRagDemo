@@ -60,3 +60,4 @@ async def embed(req: EmbedRequest):
 	# Convert numpy arrays to plain Python lists for JSON serialization
 	embeddings_list = [emb.tolist() for emb in embeddings]
 	return {"embeddings": embeddings_list}
+
