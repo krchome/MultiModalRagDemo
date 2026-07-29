@@ -152,42 +152,39 @@
         Enter a question to retrieve the most relevant chunks using semantic search.
     </p>
 
-    <form asp-action="Ask"
-          asp-controller="Rag"
+    <form asp-controller="Rag"
+          asp-action="AskWithAnswer"
           method="post"
-          class="mb-4">
+          class="card card-body mb-4">
 
-        <div asp-validation-summary="All" class="text-danger"></div>
+        <input asp-for="UploadedDocumentName" type="hidden" />
 
         <div class="mb-3">
-            <label asp-for="Question" class="form-label"></label>
-
+            <label asp-for="Question" class="form-label">
+                Ask a question about the uploaded document
+            </label>
             <textarea asp-for="Question"
                       class="form-control"
                       rows="3"
-                      placeholder="Example: What does this document say about embeddings?"></textarea>
-
-            <span asp-validation-for="Question"
-                  class="text-danger"></span>
+                      placeholder="Enter a question answered by the document"></textarea>
         </div>
 
         <div class="mb-3">
-            <label asp-for="TopK" class="form-label"></label>
-
+            <label asp-for="TopK" class="form-label">
+                Number of context chunks
+            </label>
             <input asp-for="TopK"
                    class="form-control"
                    type="number"
                    min="1"
                    max="10" />
-
-            <span asp-validation-for="TopK"
-                  class="text-danger"></span>
         </div>
 
-        <button type="submit" class="btn btn-success">
-            Search Relevant Chunks
+        <button type="submit" class="btn btn-primary">
+            Retrieve and Generate Answer
         </button>
     </form>
+
 
     @if (!string.IsNullOrWhiteSpace(Model.SearchMessage))
     {
@@ -196,31 +193,58 @@
         </div>
     }
 
-    @if (Model.RetrievedChunks.Any())
+    @if (!string.IsNullOrWhiteSpace(Model.AnswerGenerationMessage))
     {
-        <h3>Top-K Retrieved Chunks</h3>
+        <div class="alert @(Model.AnswerGenerationSucceeded
+                    ? "alert-success"
+                    : "alert-warning")">
+            @Model.AnswerGenerationMessage
+        </div>
+    }
 
-        <p class="text-muted">
-            These chunks were retrieved from Qdrant based on semantic similarity.
-            In Part 8, we will send these chunks to an LLM as context.
-        </p>
-
-        @foreach (var chunk in Model.RetrievedChunks)
-        {
-            <div class="card mb-3">
-                <div class="card-header">
-                    <strong>Score:</strong> @chunk.Score.ToString("0.0000")
-                    |
-                    <strong>Chunk Index:</strong> @chunk.ChunkIndex
-                    |
-                    <strong>Characters:</strong> @chunk.CharacterCount
-                </div>
-
-                <div class="card-body">
-                    <pre style="white-space: pre-wrap;">@chunk.ChunkText</pre>
-                </div>
+    @if (Model.AnswerGenerationSucceeded &&
+         !string.IsNullOrWhiteSpace(Model.GeneratedAnswer))
+    {
+        <section class="card border-primary mb-4">
+            <div class="card-header bg-primary text-white">
+                Grounded answer from the uploaded document
             </div>
-        }
+            <div class="card-body">
+                <p class="mb-0" style="white-space: pre-wrap;">@Model.GeneratedAnswer</p>
+            </div>
+        </section>
+    }
+
+ 
+
+    @if (Model.RetrievedChunks.Count > 0)
+    {
+        <section class="mt-4">
+            <h2 class="h4">Supporting context retrieved from Qdrant</h2>
+            <p class="text-muted">
+                These are the document chunks supplied to Azure OpenAI.
+            </p>
+
+            @foreach (var chunk in Model.RetrievedChunks)
+            {
+                <article class="card mb-3">
+                    <div class="card-header">
+                        Chunk @chunk.ChunkIndex
+                        <span class="ms-2 text-muted">
+                            Similarity: @chunk.Score.ToString("F4")
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">@chunk.ChunkText</p>
+                        <small class="text-muted">
+                            Point ID: @chunk.PointId |
+                            Characters: @chunk.CharacterCount
+                        </small>
+                    </div>
+                </article>
+            }
+        </section>
+
     }
 </div>
 

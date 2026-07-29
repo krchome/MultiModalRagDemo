@@ -52,6 +52,14 @@ builder.Services.AddHttpClient<IVectorSearchService, VectorSearchService>(
         client.BaseAddress = new Uri(options.BaseUrl);
         client.Timeout = TimeSpan.FromSeconds(30);
     });
+builder.Services.Configure<AzureOpenAIOptions>(
+    builder.Configuration.GetSection(
+        AzureOpenAIOptions.SectionName));
+
+builder.Services.AddSingleton<
+    IAnswerGenerationService,
+    AzureOpenAIAnswerGenerationService>();
+
 
 var app = builder.Build();
 

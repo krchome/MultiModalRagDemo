@@ -41,4 +41,11 @@ public class RagUploadViewModel
 
     public string SearchMessage { get; set; } = string.Empty;
 
+    public string GeneratedAnswer { get; set; } = string.Empty;
+
+    public bool AnswerGenerationSucceeded { get; set; }
+
+    public string AnswerGenerationMessage { get; set; } = string.Empty;
+
+
 }

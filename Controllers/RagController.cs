@@ -15,7 +15,8 @@ namespace MultimodalRagDemo.Controllers
         IEmbeddingClient embeddingClient,
         IVectorStoreService _vectorStoreService,
         IVectorSearchService _vectorSearchService,
-        ILogger<RagController> _logger) : Controller
+        ILogger<RagController> _logger,
+        IAnswerGenerationService _answerGenerationService) : Controller
     {
         [HttpGet]
         public IActionResult Index()
@@ -156,5 +157,65 @@ namespace MultimodalRagDemo.Controllers
             return View("Index", model);
 
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AskWithAnswer(
+    RagUploadViewModel model,CancellationToken cancellationToken)
+        {
+            model.GeneratedAnswer = string.Empty;
+            model.AnswerGenerationSucceeded = false;
+            model.AnswerGenerationMessage = string.Empty;
+
+            var question = model.Question?.Trim();
+
+            if (string.IsNullOrWhiteSpace(question))
+            {
+                model.SearchMessage = "Enter a question before searching the document.";
+                return View("Index", model);
+            }
+
+            model.Question = question;
+            model.TopK = Math.Clamp(model.TopK, 1, 10);
+
+            try
+            {
+                var retrievedChunks = await _vectorSearchService.SearchAsync(
+                    question,
+                    model.TopK);
+
+                model.RetrievedChunks = retrievedChunks.ToList();
+                model.SearchMessage =
+                    $"{model.RetrievedChunks.Count} relevant chunk(s) retrieved.";
+
+                var answerResult = await _answerGenerationService.GenerateAnswerAsync(
+                    question,
+                    model.RetrievedChunks,
+                    cancellationToken);
+
+                model.GeneratedAnswer = answerResult.Answer;
+                model.AnswerGenerationSucceeded = answerResult.Succeeded;
+                model.AnswerGenerationMessage = answerResult.Message;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "The RAG answer workflow failed for question: {Question}",
+                    question);
+
+                model.SearchMessage =
+                    "The document search could not be completed.";
+                model.AnswerGenerationMessage =
+                    "The final answer could not be generated. Check the application logs.";
+            }
+
+            return View("Index", model);
+        }
+
     }
 }

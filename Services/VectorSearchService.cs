@@ -90,6 +90,14 @@ public class VectorSearchService : IVectorSearchService
                 cancellationToken: cancellationToken);
 
         var points = queryResponse?.Result?.Points ?? [];
+        foreach (var point in points)
+        {
+            _logger.LogInformation(
+                "Qdrant point {PointId}: raw score = {Score:R}, chunk index = {ChunkIndex}",
+                point.GetPointId(),
+                point.Score,
+                point.Payload.ChunkIndex);
+        }
 
         return points
             .Select(point => new RetrievedChunk
